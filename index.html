@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>09subing - Clash 订阅转换</title>
+<meta name="description" content="在线 Clash 订阅转换与管理服务，支持多协议解析、智能分流、多订阅聚合">
+<meta name="theme-color" content="#1e1b4b">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{colors:{dark:{50:'#1a1a2e',100:'#16213e',200:'#0f3460'},primary:{500:'#8b5cf6',400:'#a78bfa',300:'#c4b5fd'}}}}}</script>
+<style>
+.bg-grad{background:radial-gradient(ellipse at 50% 0%,#1a1040 0%,#0a0a1a 50%,#000 100%)}
+.bg-glass{background:rgba(255,255,255,0.04);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.bd-glass{border:1px solid rgba(255,255,255,0.08)}
+.code-bg{background:#0d1117}
+.scrollbar-thin::-webkit-scrollbar{width:4px}
+.scrollbar-thin::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px}
+input[type="text"],input[type="email"],input[type="password"],input[type="url"],textarea,select{background:rgba(255,255,255,0.05)!important;border:1px solid rgba(255,255,255,0.1)!important;color:#fff!important}
+input:focus,textarea:focus,select:focus{border-color:#8b5cf6!important;outline:none!important;box-shadow:0 0 0 2px rgba(139,92,246,0.2)!important}
+.modal{display:none}
+.modal.show{display:flex}
+</style>
+</head>
+<body class="min-h-screen bg-grad text-white font-sans">
+
+<!-- Header -->
+<header class="sticky top-0 z-50 backdrop-blur-xl bg-black/50 border-b border-white/5">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="flex items-center justify-between h-16">
+<a href="/" class="flex items-center gap-2 group">
+<div class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-lg font-bold shadow-lg shadow-blue-500/25">09</div>
+<span class="text-xl font-bold bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent hidden sm:block">09subing</span>
+</a>
+<nav class="hidden md:flex items-center rounded-full border border-white/10 bg-white/[0.04] p-1">
+<a href="#" onclick="switchPage('home')" class="nav-link inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-medium transition-all border border-white/10 bg-white/10 text-white" data-page="home">首页</a>
+<a href="#" onclick="switchPage('templates')" class="nav-link inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-medium transition-all text-white/60 hover:bg-white/5 hover:text-white" data-page="templates">模板库</a>
+<a href="#" onclick="switchPage('faq')" class="nav-link inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-medium transition-all text-white/60 hover:bg-white/5 hover:text-white" data-page="faq">FAQ</a>
+</nav>
+<div id="auth-buttons" class="flex items-center gap-2">
+<button onclick="showLogin()" class="inline-flex items-center justify-center h-8 rounded-lg px-3 text-xs font-medium gap-2 border border-violet-500/50 bg-violet-500/20 text-white hover:bg-violet-500/30 transition-all">登录</button>
+</div>
+</div>
+</div>
+</header>
+
+<!-- Page: Home -->
+<main id="page-home" class="flex-1 pb-16 md:pb-0">
+<div class="max-w-[clamp(1200px,95vw,1600px)] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="text-center mb-10">
+<h1 class="text-3xl sm:text-4xl font-bold mb-3 bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">Clash 订阅转换器</h1>
+<p class="text-white/50 text-sm sm:text-base max-w-2xl mx-auto">在线 Clash 订阅转换、生成与管理服务，支持多协议解析、智能分流、多订阅聚合和持久化订阅链接</p>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+<!-- Left Panel -->
+<div class="space-y-5">
+<div class="bg-glass bd-glass rounded-2xl p-5" id="config-section">
+<div class="flex items-center justify-between mb-4"><h2 class="text-sm font-semibold text-white flex items-center gap-2">🔗 订阅链接</h2><button onclick="addUrlInput()" class="text-xs text-indigo-400 hover:text-indigo-300">+ 添加</button></div>
+<div id="url-inputs"><div class="url-group flex gap-2 mb-3"><input type="url" class="url-input flex-1 px-3 py-2.5 rounded-xl text-sm placeholder-white/30" placeholder="输入订阅链接..."><button onclick="this.closest('.url-group').remove()" class="px-2 text-white/30 hover:text-red-400">✕</button></div></div>
+</div>
+<div class="bg-glass bd-glass rounded-2xl p-5">
+<h2 class="text-sm font-semibold text-white mb-4">📝 手动输入节点</h2>
+<textarea id="raw-nodes" rows="6" class="w-full px-3 py-2.5 rounded-xl text-sm placeholder-white/30 font-mono resize-y" placeholder="ss://, ssr://, vmess://, vless://, trojan://, hysteria2://, tuic:// ..."></textarea>
+</div>
+<div class="bg-glass bd-glass rounded-2xl p-5">
+<h2 class="text-sm font-semibold text-white mb-4">📚 配置模板</h2>
+<select id="template-select" class="w-full px-3 py-2.5 rounded-xl text-sm"></select>
+</div>
+<div class="bg-glass bd-glass rounded-2xl p-5">
+<h2 class="text-sm font-semibold text-white mb-4">⚙️ 选项</h2>
+<div class="space-y-3">
+<label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" id="opt-dedup" checked class="w-4 h-4 rounded border-white/20 bg-white/5 text-indigo-600 accent-indigo-600"><span class="text-sm text-white/60">去重节点</span></label>
+<details class="group"><summary class="text-sm text-white/60 cursor-pointer hover:text-white/80">节点命名模板</summary><input type="text" id="opt-name-template" class="w-full mt-2 px-3 py-2 rounded-xl text-sm placeholder-white/30 font-mono" placeholder="s/(.+)/[节点] $1/"><p class="text-xs text-white/30 mt-1">sed 风格正则替换</p></details>
+</div>
+</div>
+<div class="flex gap-3">
+<button onclick="convertSubscription()" id="btn-convert" class="flex-1 py-3 px-6 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium text-sm hover:from-indigo-500 hover:to-purple-500 transition-all shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2">📄 生成配置</button>
+<button onclick="openSaveDialog()" id="btn-gen-link" class="py-3 px-6 rounded-xl bg-green-500/15 border border-green-500/20 text-green-400 hover:bg-green-500/25 font-medium text-sm transition-all flex items-center gap-2">🔗 生成订阅链接</button>
+</div>
+</div>
+
+<!-- Right Panel -->
+<div class="space-y-5">
+<div id="result-stats" class="bg-glass bd-glass rounded-2xl p-5 hidden"><div class="flex items-center justify-between"><h2 class="text-sm font-semibold text-white">转换结果</h2><span id="proxy-count" class="text-xs text-green-400 bg-green-500/10 px-3 py-1 rounded-full"></span></div></div>
+<div class="bg-glass bd-glass rounded-2xl p-5">
+<div class="flex items-center justify-between mb-4"><h2 class="text-sm font-semibold text-white">📋 节点列表</h2><div class="flex gap-2"><button onclick="downloadConfig()" id="btn-download" class="text-xs px-3 py-1.5 rounded-lg bg-green-500/15 text-green-400 hover:bg-green-500/25 transition-all flex items-center gap-1" disabled>⬇ 下载</button><button onclick="copyConfig()" id="btn-copy" class="text-xs px-3 py-1.5 rounded-lg bg-blue-500/15 text-blue-400 hover:bg-blue-500/25 transition-all flex items-center gap-1" disabled>📋 复制</button></div></div>
+<div id="proxy-list" class="max-h-64 overflow-y-auto scrollbar-thin space-y-1"><p class="text-sm text-white/30 text-center py-8">点击"生成配置"查看节点列表</p></div>
+</div>
+<div class="bg-glass bd-glass rounded-2xl p-5">
+<h2 class="text-sm font-semibold text-white mb-4">YAML 配置预览</h2>
+<pre id="yaml-preview" class="code-bg rounded-xl p-4 text-xs text-green-400 font-mono overflow-x-auto max-h-[500px] overflow-y-auto scrollbar-thin whitespace-pre-wrap"># 点击"生成配置"查看完整 YAML 配置</pre>
+</div>
+</div>
+</div>
+
+<!-- My Subscriptions -->
+<div id="my-subscriptions" class="mt-12 hidden">
+<div class="bg-glass bd-glass rounded-2xl p-6">
+<h2 class="text-lg font-semibold text-white mb-4">💳 我的订阅</h2>
+<div id="subscriptions-list" class="space-y-3"></div>
+<p id="subs-empty" class="text-sm text-white/30 text-center py-4">暂无订阅，转换后可生成持久化订阅链接</p>
+</div>
+</div>
+</div>
+</main>
+
+<!-- Page: Templates -->
+<main id="page-templates" class="flex-1 pb-16 md:pb-0 hidden">
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12" id="templates-content"></div>
+</main>
+
+<!-- Page: FAQ -->
+<main id="page-faq" class="flex-1 pb-16 md:pb-0 hidden">
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12" id="faq-content"></div>
+</main>
+
+<!-- Login Modal -->
+<div id="login-modal" class="modal fixed inset-0 z-50 items-center justify-center bg-black/70 backdrop-blur-sm p-4" onclick="if(event.target===this)closeModal('login-modal')">
+<div class="bg-[#111] border border-white/10 rounded-2xl p-6 max-w-md w-full" onclick="event.stopPropagation()">
+<h3 class="text-lg font-semibold text-white mb-4" id="login-modal-title">登录 09subing</h3>
+<div id="login-form">
+<div class="space-y-3"><input type="email" id="login-email" class="w-full px-3 py-2.5 rounded-xl text-sm placeholder-white/30" placeholder="邮箱"><input type="password" id="login-password" class="w-full px-3 py-2.5 rounded-xl text-sm placeholder-white/30" placeholder="密码"><button onclick="doLogin()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium text-sm hover:from-indigo-500 hover:to-purple-500 transition-all">登录</button></div>
+<p class="text-center text-sm text-white/40 mt-4">还没有账号？<a href="#" onclick="showRegister()" class="text-indigo-400 hover:text-indigo-300">立即注册</a></p>
+</div>
+<div id="register-form" class="hidden">
+<div class="space-y-3"><input type="text" id="reg-username" class="w-full px-3 py-2.5 rounded-xl text-sm placeholder-white/30" placeholder="用户名（至少3个字符）"><input type="email" id="reg-email" class="w-full px-3 py-2.5 rounded-xl text-sm placeholder-white/30" placeholder="邮箱"><input type="password" id="reg-password" class="w-full px-3 py-2.5 rounded-xl text-sm placeholder-white/30" placeholder="密码（至少6个字符）"><button onclick="doRegister()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium text-sm hover:from-indigo-500 hover:to-purple-500 transition-all">注册</button></div>
+<p class="text-center text-sm text-white/40 mt-4">已有账号？<a href="#" onclick="showLogin()" class="text-indigo-400 hover:text-indigo-300">立即登录</a></p>
+</div>
+</div>
+</div>
+
+<!-- Save Dialog -->
+<div id="save-dialog" class="modal fixed inset-0 z-50 items-center justify-center bg-black/70 backdrop-blur-sm p-4" onclick="if(event.target===this)closeModal('save-dialog')">
+<div class="bg-[#111] border border-white/10 rounded-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+<div id="save-form">
+<h3 class="text-lg font-semibold text-white mb-1">生成订阅链接</h3>
+<p class="text-sm text-white/50 mb-5">生成持久化的订阅链接，支持在 Clash 客户端中自动更新</p>
+<div class="space-y-4">
+<div><label class="block text-sm text-white/60 mb-1.5">订阅名称</label><input type="text" id="sub-name" maxlength="100" class="w-full px-3 py-2.5 rounded-xl text-sm placeholder-white/30" placeholder="我的配置"></div>
+<div>
+<div class="flex items-center justify-between mb-2"><label class="text-sm text-white/60">启用自动更新</label><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="sub-auto-update" class="sr-only peer" onchange="toggleAutoUpdate()"><div class="w-9 h-5 bg-white/10 rounded-full peer-checked:bg-indigo-600 peer transition-colors"></div><div class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full peer-checked:translate-x-4 transition-transform"></div></label></div>
+<div id="auto-update-options" class="hidden space-y-2">
+<label class="block text-sm text-white/60">自动更新间隔</label>
+<div class="grid grid-cols-3 gap-2">
+<button data-hours="6" onclick="selectInterval(6,this)" class="interval-btn py-2 px-3 rounded-lg text-xs font-medium bg-white/5 text-white/50 hover:bg-white/10 transition-all border border-transparent">6 小时</button>
+<button data-hours="12" onclick="selectInterval(12,this)" class="interval-btn py-2 px-3 rounded-lg text-xs font-medium bg-white/5 text-white/50 hover:bg-white/10 transition-all border border-transparent">12 小时</button>
+<button data-hours="24" onclick="selectInterval(24,this)" class="interval-btn active py-2 px-3 rounded-lg text-xs font-medium bg-indigo-500/15 text-indigo-400 border border-indigo-500/30">24 小时</button>
+</div>
+</div>
+</div>
+</div>
+<div class="flex gap-3 mt-6"><button onclick="closeModal('save-dialog')" class="flex-1 py-2.5 rounded-xl bg-white/5 text-white/50 hover:bg-white/10 text-sm">取消</button><button onclick="saveSubscription()" id="btn-save-sub" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium text-sm hover:from-indigo-500 hover:to-purple-500 transition-all">生成链接</button></div>
+</div>
+<div id="save-success" class="hidden text-center">
+<div class="w-12 h-12 rounded-full bg-green-500/15 flex items-center justify-center mx-auto mb-3">✅</div>
+<h3 class="text-lg font-semibold text-white">订阅链接已生成</h3>
+<p class="text-sm text-white/50 mt-1">复制下方链接到 Clash 客户端导入使用</p>
+<div class="bg-glass bd-glass rounded-xl p-3 mt-4"><label class="block text-xs text-white/40 mb-1.5 text-left">订阅链接</label><div class="flex gap-2"><input type="text" id="generated-sub-url" readonly class="flex-1 px-3 py-2 rounded-lg text-xs text-green-400 font-mono bg-black/30 border-0" onclick="this.select()"><button onclick="copyGeneratedUrl()" class="px-3 py-2 rounded-lg bg-blue-500/15 text-blue-400 hover:bg-blue-500/25 text-xs">复制</button></div></div>
+<button onclick="closeModal('save-dialog')" class="w-full mt-4 py-2.5 rounded-xl bg-white/5 text-white/60 hover:bg-white/10 text-sm">完成</button>
+</div>
+</div>
+</div>
+
+<!-- Toast -->
+<div id="toast-container" class="fixed top-16 right-4 z-[100] flex flex-col gap-2 max-w-sm"></div>
+
+<!-- Backend config (hidden by default, shown when no API base set) -->
+<div id="backend-config" class="hidden fixed bottom-4 left-4 right-4 z-40">
+<div class="max-w-md mx-auto bg-[#111] border border-yellow-500/30 rounded-2xl p-4 shadow-2xl">
+<p class="text-sm text-yellow-400/80 mb-2">⚠️ 未设置后端地址</p>
+<div class="flex gap-2">
+<input type="text" id="backend-url-input" class="flex-1 px-3 py-2 rounded-xl text-sm text-white placeholder-white/30" placeholder="https://your-backend-server.com">
+<button onclick="setBackendUrl()" class="px-4 py-2 rounded-xl bg-yellow-500/15 text-yellow-400 hover:bg-yellow-500/25 text-sm font-medium transition-all">设置</button>
+</div>
+<p class="text-xs text-white/30 mt-2">部署后端后在此填写地址，或通过 URL 参数 <code class="text-yellow-400/50">?api=地址</code> 访问</p>
+</div>
+</div>
+
+<script>
+// ====== CONFIG ======
+// Backend URL: auto-detect if same origin, otherwise use localStorage or default
+// Set via: ?api=https://your-backend.com in URL, or localStorage.setItem('api_base', 'https://...')
+function getApiBase() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const param = urlParams.get('api');
+    if (param) { localStorage.setItem('api_base', param); return param; }
+    const stored = localStorage.getItem('api_base');
+    if (stored) return stored;
+    // If running on same origin as backend, use relative path
+    return '';
+}
+const API = getApiBase();
+
+// ====== STATE ======
+let currentYaml = '', currentProxies = [], selectedInterval = 24, autoUpdateEnabled = false;
+let currentUser = null;
+let templates = {};
+
+// ====== INIT ======
+checkAuth();
+loadTemplates();
+switchPage('home');
+
+function switchPage(page) {
+    document.querySelectorAll('main[id^="page-"]').forEach(m => m.classList.add('hidden'));
+    const target = document.getElementById('page-' + page);
+    if (target) target.classList.remove('hidden');
+    document.querySelectorAll('.nav-link').forEach(l => {
+        if (l.dataset.page === page) l.classList.add('border','border-white/10','bg-white/10','text-white');
+        else l.classList.remove('border','border-white/10','bg-white/10','text-white');
+    });
+    if (page === 'templates') renderTemplatesPage();
+    if (page === 'faq') renderFaqPage();
+}
+
+// ====== API HELPERS ======
+async function apiFetch(url, options = {}) {
+    const res = await fetch(API + url, { ...options, credentials: 'include', headers: { ...(options.headers || {}), 'Content-Type': options.body ? 'application/json' : (options.headers||{})['Content-Type'] || undefined } });
+    return safeJson(res);
+}
+
+async function safeJson(res) {
+    const ct = res.headers.get('content-type') || '';
+    if (res.status === 401) {
+        const data = ct.includes('json') ? await res.json() : {};
+        showToast(data.error || '请先登录后再操作', 'error');
+        currentUser = null; updateAuthUI(); throw new Error('Unauthorized');
+    }
+    if (!ct.includes('json')) { const t = await res.text(); throw new Error('非JSON响应: '+t.substring(0,100)); }
+    return res.json();
+}
+
+function showToast(msg, type='info') {
+    const c = document.getElementById('toast-container');
+    const t = document.createElement('div');
+    const colors = {success:'border-green-500/50 bg-green-500/10 text-green-400',error:'border-red-500/50 bg-red-500/10 text-red-400',info:'border-blue-500/50 bg-blue-500/10 text-blue-400'};
+    t.className = `px-4 py-3 rounded-xl border ${colors[type]||colors.info} backdrop-blur-xl shadow-lg text-sm`;
+    t.textContent = msg; c.appendChild(t);
+    setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),300); }, 3000);
+}
+
+function closeModal(id) { const m = document.getElementById(id); m.classList.remove('show'); }
+function openModal(id) { document.getElementById(id).classList.add('show'); }
+
+// ====== AUTH ======
+async function checkAuth() {
+    try {
+        const data = await apiFetch('/auth/status');
+        if (data.authenticated) { currentUser = data.user; updateAuthUI(); }
+    } catch(e) {}
+}
+
+function updateAuthUI() {
+    const el = document.getElementById('auth-buttons');
+    if (currentUser) {
+        el.innerHTML = `<span class="text-sm text-white/60 hidden sm:inline">${escHtml(currentUser.username)}</span><button onclick="doLogout()" class="inline-flex items-center justify-center h-8 rounded-lg px-3 text-xs font-medium gap-2 border border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all">退出</button>`;
+    } else {
+        el.innerHTML = '<button onclick="showLogin()" class="inline-flex items-center justify-center h-8 rounded-lg px-3 text-xs font-medium gap-2 border border-violet-500/50 bg-violet-500/20 text-white hover:bg-violet-500/30 transition-all">登录</button>';
+    }
+    loadSubscriptions();
+}
+
+function showLogin() {
+    document.getElementById('login-form').classList.remove('hidden');
+    document.getElementById('register-form').classList.add('hidden');
+    document.getElementById('login-modal-title').textContent = '登录 09subing';
+    openModal('login-modal');
+}
+
+function showRegister() {
+    document.getElementById('login-form').classList.add('hidden');
+    document.getElementById('register-form').classList.remove('hidden');
+    document.getElementById('login-modal-title').textContent = '注册 09subing';
+}
+
+async function doLogin() {
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    if (!email || !password) { showToast('请输入邮箱和密码', 'error'); return; }
+    try {
+        const data = await apiFetch('/auth/login', { method: 'POST', body: JSON.stringify({email, password}) });
+        if (data.success) { currentUser = data.user; updateAuthUI(); closeModal('login-modal'); showToast('登录成功', 'success'); }
+    } catch(e) { if (e.message !== 'Unauthorized') showToast('登录失败', 'error'); }
+}
+
+async function doRegister() {
+    const username = document.getElementById('reg-username').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const password = document.getElementById('reg-password').value;
+    if (!username || !email || !password) { showToast('请填写所有字段', 'error'); return; }
+    try {
+        const data = await apiFetch('/auth/register', { method: 'POST', body: JSON.stringify({username, email, password}) });
+        if (data.success) { currentUser = data.user; updateAuthUI(); closeModal('login-modal'); showToast('注册成功', 'success'); }
+    } catch(e) { showToast('注册失败: ' + (e.message||''), 'error'); }
+}
+
+async function doLogout() {
+    try { await apiFetch('/auth/logout', { method: 'POST' }); } catch(e) {}
+    currentUser = null; updateAuthUI(); showToast('已退出登录', 'info');
+}
+
+// ====== TEMPLATES ======
+async function loadTemplates() {
+    try {
+        const data = await apiFetch('/templates');
+        templates = data;
+        const sel = document.getElementById('template-select');
+        sel.innerHTML = '';
+        for (const [id, t] of Object.entries(data)) {
+            sel.innerHTML += `<option value="${id}" class="bg-gray-900">${t.name} - ${t.description}</option>`;
+        }
+        if (Object.keys(data).length > 0) sel.value = Object.keys(data)[Object.keys(data).length-1];
+    } catch(e) {}
+}
+
+function renderTemplatesPage() {
+    const el = document.getElementById('templates-content');
+    el.innerHTML = `<div class="text-center mb-10"><h1 class="text-3xl font-bold text-white mb-3">配置模板库</h1><p class="text-white/50 text-sm max-w-xl mx-auto">选择合适的模板作为起点，快速生成 Clash 配置</p></div><div class="grid grid-cols-1 md:grid-cols-2 gap-5">${
+        Object.entries(templates).map(([id,t]) => `
+        <div class="bg-glass bd-glass rounded-2xl p-6 hover:border-white/20 transition-all cursor-pointer" onclick="applyTemplate('${id}')">
+        <h3 class="text-lg font-semibold text-white mb-2">${t.name}</h3>
+        <p class="text-sm text-white/50 leading-relaxed">${t.description}</p>
+        <button class="mt-4 text-xs px-3 py-1.5 rounded-lg bg-indigo-500/15 text-indigo-400 hover:bg-indigo-500/25 transition-all">使用此模板</button>
+        </div>`).join('')
+    }</div>`;
+}
+
+function applyTemplate(id) { document.getElementById('template-select').value = id; switchPage('home'); showToast('已选择模板: ' + (templates[id]?.name||id), 'info'); }
+
+function renderFaqPage() {
+    document.getElementById('faq-content').innerHTML = `
+    <div class="text-center mb-10"><h1 class="text-3xl font-bold text-white mb-3">帮助中心</h1></div>
+    <div class="space-y-4">${[
+        {q:'09subing 是什么？',a:'09subing 是一个在线 Clash 订阅转换与管理服务，支持 SS/SSR/VMess/VLESS/Trojan/Hysteria2/TUIC 等协议解析，生成 mihomo 兼容的 YAML 配置。'},
+        {q:'如何使用？',a:'在首页粘贴订阅链接或手动输入节点，选择配置模板，点击"生成配置"即可。登录后可保存为持久化订阅链接供 Clash 客户端使用。'},
+        {q:'两种模板有什么区别？',a:'<b>精简版</b>：区分国内/国外节点，基础广告拦截和隐私保护。<br><b>标准版</b>：完整分流规则，含 AI 服务、油管、谷歌、微软、苹果、电报、代码托管等细分。'},
+        {q:'自动更新如何工作？',a:'保存订阅时可设置 6/12/24 小时自动更新。客户端访问订阅链接时，服务器自动检查并刷新过期配置。'},
+        {q:'生成的配置兼容哪些客户端？',a:'兼容所有基于 Clash Meta / mihomo 内核的客户端：Clash Verge Rev、Clash Meta for Android、Mihomo Party 等。'},
+    ].map(f => `<div class="bg-glass bd-glass rounded-2xl p-5"><h3 class="text-base font-semibold text-white mb-2">${f.q}</h3><p class="text-sm text-white/50 leading-relaxed">${f.a}</p></div>`).join('')}</div>`;
+}
+
+// ====== URL INPUTS ======
+function addUrlInput() {
+    const d = document.createElement('div'); d.className = 'url-group flex gap-2 mb-3';
+    d.innerHTML = '<input type="url" class="url-input flex-1 px-3 py-2.5 rounded-xl text-sm placeholder-white/30" placeholder="输入订阅链接..."><button onclick="this.closest(\'.url-group\').remove()" class="px-2 text-white/30 hover:text-red-400">✕</button>';
+    document.getElementById('url-inputs').appendChild(d);
+}
+
+function getUrls() { return Array.from(document.querySelectorAll('.url-input')).map(i=>i.value.trim()).filter(v=>v); }
+
+// ====== CONVERT ======
+async function convertSubscription() {
+    const urls = getUrls(), rawNodes = document.getElementById('raw-nodes').value.trim();
+    const templateId = document.getElementById('template-select').value;
+    if (!urls.length && !rawNodes) { showToast('请输入订阅链接或节点','error'); return; }
+    const btn = document.getElementById('btn-convert'); btn.disabled = true; btn.textContent = '⏳ 转换中...';
+    try {
+        const data = await apiFetch('/convert', { method: 'POST', body: JSON.stringify({
+            urls, nodes: rawNodes, template_id: templateId,
+            deduplicate: document.getElementById('opt-dedup').checked,
+            name_template: document.getElementById('opt-name-template').value.trim(),
+        })});
+        if (data.error) { showToast(data.error, 'error'); return; }
+        currentYaml = data.yaml; currentProxies = data.proxies || [];
+        document.getElementById('result-stats').classList.remove('hidden');
+        document.getElementById('proxy-count').textContent = data.proxy_count + ' 个节点';
+        document.getElementById('proxy-list').innerHTML = (data.proxy_names||[]).map((n,i) => `<div class="flex items-center gap-2 py-1.5 px-2 rounded-lg text-xs text-white/70 hover:bg-white/5"><span class="w-6 h-6 rounded-lg bg-white/5 flex items-center justify-center text-white/40 text-xs font-mono">${i+1}</span><span class="truncate">${escHtml(n)}</span></div>`).join('');
+        document.getElementById('yaml-preview').textContent = data.yaml;
+        document.getElementById('btn-download').disabled = false; document.getElementById('btn-copy').disabled = false;
+        showToast('成功解析 '+data.proxy_count+' 个节点', 'success');
+    } catch(e) { showToast('转换失败: '+e.message, 'error'); }
+    finally { btn.disabled = false; btn.innerHTML = '📄 生成配置'; }
+}
+
+function downloadConfig() { if(!currentYaml)return; const b=new Blob([currentYaml],{type:'text/yaml'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='09subing-config.yaml'; a.click(); showToast('已下载','success'); }
+function copyConfig() { if(!currentYaml)return; navigator.clipboard.writeText(currentYaml).then(()=>showToast('已复制','success')).catch(()=>showToast('复制失败','error')); }
+
+// ====== SAVE DIALOG ======
+function openSaveDialog() {
+    if (!getUrls().length && !document.getElementById('raw-nodes').value.trim()) { showToast('请先输入订阅链接或节点','error'); return; }
+    document.getElementById('save-form').classList.remove('hidden'); document.getElementById('save-success').classList.add('hidden');
+    document.getElementById('sub-name').value = '我的配置 ' + new Date().toISOString().slice(0,10);
+    autoUpdateEnabled = false; selectedInterval = 24;
+    document.getElementById('sub-auto-update').checked = false;
+    document.getElementById('auto-update-options').classList.add('hidden');
+    document.querySelectorAll('.interval-btn').forEach(b=>{ b.classList.remove('active','bg-indigo-500/15','text-indigo-400','border-indigo-500/30'); b.classList.add('bg-white/5','text-white/50'); });
+    document.querySelector('.interval-btn[data-hours="24"]')?.classList.add('active','bg-indigo-500/15','text-indigo-400','border-indigo-500/30');
+    openModal('save-dialog');
+}
+
+function toggleAutoUpdate() { autoUpdateEnabled = document.getElementById('sub-auto-update').checked; document.getElementById('auto-update-options').classList.toggle('hidden', !autoUpdateEnabled); }
+function selectInterval(h, btn) { selectedInterval = h; document.querySelectorAll('.interval-btn').forEach(b=>{ b.classList.remove('active','bg-indigo-500/15','text-indigo-400','border-indigo-500/30'); b.classList.add('bg-white/5','text-white/50'); }); btn.classList.add('active','bg-indigo-500/15','text-indigo-400','border-indigo-500/30'); btn.classList.remove('bg-white/5','text-white/50'); }
+
+async function saveSubscription() {
+    if (!currentUser) { showToast('请先登录', 'error'); showLogin(); return; }
+    const name = document.getElementById('sub-name').value.trim() || 'My Subscription';
+    const btn = document.getElementById('btn-save-sub'); btn.disabled = true; btn.textContent = '⏳ 生成中...';
+    try {
+        const data = await apiFetch('/subscription', { method: 'POST', body: JSON.stringify({
+            name, urls: getUrls(), template_id: document.getElementById('template-select').value,
+            auto_update_interval: autoUpdateEnabled ? selectedInterval : 0,
+            config: { nodes: document.getElementById('raw-nodes').value.trim(), deduplicate: document.getElementById('opt-dedup').checked, name_template: document.getElementById('opt-name-template').value.trim() }
+        })});
+        if (data.error) { showToast(data.error, 'error'); return; }
+        document.getElementById('save-form').classList.add('hidden'); document.getElementById('save-success').classList.remove('hidden');
+        document.getElementById('generated-sub-url').value = data.subscription.sub_url;
+        loadSubscriptions(); showToast('订阅链接已生成', 'success');
+    } catch(e) { showToast('保存失败', 'error'); }
+    finally { btn.disabled = false; btn.innerHTML = '🔗 生成链接'; }
+}
+
+function copyGeneratedUrl() { const i = document.getElementById('generated-sub-url'); i.select(); navigator.clipboard.writeText(i.value).then(()=>showToast('已复制','success')); }
+
+// ====== SUBSCRIPTIONS ======
+async function loadSubscriptions() {
+    if (!currentUser) { document.getElementById('my-subscriptions').classList.add('hidden'); return; }
+    document.getElementById('my-subscriptions').classList.remove('hidden');
+    try {
+        const data = await apiFetch('/subscription');
+        const list = document.getElementById('subscriptions-list');
+        const empty = document.getElementById('subs-empty');
+        if (!data.subscriptions?.length) { list.innerHTML=''; empty.classList.remove('hidden'); return; }
+        empty.classList.add('hidden');
+        list.innerHTML = data.subscriptions.map(s => {
+            const h = s.auto_update_hours||0, t = s.traffic_display, e = s.expire_display;
+            return `<div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-white/[0.03] border border-white/5 hover:border-white/10 gap-3">
+            <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2"><span class="text-sm text-white font-medium truncate">${escHtml(s.name)}</span><span class="text-xs text-white/30 bg-white/5 px-1.5 py-0.5 rounded">${s.proxy_count||0}节点</span>${h?`<span class="text-xs text-indigo-400/70 bg-indigo-500/10 px-1.5 py-0.5 rounded">${h}h</span>`:''}</div>
+            <div class="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-xs text-white/40">${t?`<span>${t}</span>`:''}${e?`<span>到期:${e}</span>`:''}<span>${s.url_count}源</span></div>
+            <p class="text-xs text-green-400/60 font-mono mt-1 truncate">${escHtml(s.sub_url)}</p></div>
+            <div class="flex gap-2 shrink-0"><button onclick="navigator.clipboard.writeText('${escHtml(s.sub_url)}').then(()=>showToast('已复制','success'))" class="text-xs px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20">复制</button><button onclick="deleteSubscription(${s.id})" class="text-xs px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20">删除</button></div></div>`;
+        }).join('');
+    } catch(e) {}
+}
+
+async function deleteSubscription(id) {
+    if (!confirm('确定要删除此订阅吗？')) return;
+    try { await apiFetch('/subscription?id='+id, { method: 'DELETE' }); showToast('已删除', 'success'); loadSubscriptions(); } catch(e) { showToast('删除失败', 'error'); }
+}
+
+function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+// ====== BACKEND CONFIG ======
+if (!API) { document.getElementById('backend-config').classList.remove('hidden'); }
+
+function setBackendUrl() {
+    const url = document.getElementById('backend-url-input').value.trim().replace(/\/+$/, '');
+    if (!url) { showToast('请输入后端地址', 'error'); return; }
+    localStorage.setItem('api_base', url);
+    document.getElementById('backend-config').classList.add('hidden');
+    showToast('后端地址已设置，刷新后生效', 'success');
+    setTimeout(() => location.reload(), 1000);
+}
+</script>
+</body>
+</html>
