@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "subqd",
+  "name": "09subing",
   "main": "worker.js",
   "compatibility_date": "2026-06-02",
   "observability": { "enabled": true },
