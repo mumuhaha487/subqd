@@ -1,0 +1,9 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "subqd",
+  "main": "worker.js",
+  "compatibility_date": "2026-06-02",
+  "observability": { "enabled": true },
+  "assets": { "directory": ".", "not_found_handling": "none" },
+  "compatibility_flags": ["nodejs_compat"]
+}

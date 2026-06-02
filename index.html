@@ -178,18 +178,20 @@ input:focus,textarea:focus,select:focus{border-color:#8b5cf6!important;outline:n
 
 <script>
 // ====== CONFIG ======
-// Backend URL: auto-detect if same origin, otherwise use localStorage or default
-// Set via: ?api=https://your-backend.com in URL, or localStorage.setItem('api_base', 'https://...')
+// Backend URL strategies (in priority order):
+// 1. Worker-injected value from BACKEND_URL env var (set by worker.js at deploy time)
+// 2. URL param: ?api=https://backend-url
+// 3. localStorage: localStorage.setItem('api_base', 'https://...')
+// 4. Empty = same-origin (if frontend and backend share a domain)
 function getApiBase() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const param = urlParams.get('api');
+    var urlParams = new URLSearchParams(window.location.search);
+    var param = urlParams.get('api');
     if (param) { localStorage.setItem('api_base', param); return param; }
-    const stored = localStorage.getItem('api_base');
+    var stored = localStorage.getItem('api_base');
     if (stored) return stored;
-    // If running on same origin as backend, use relative path
     return '';
 }
-const API = getApiBase();
+var API = getApiBase();
 
 // ====== STATE ======
 let currentYaml = '', currentProxies = [], selectedInterval = 24, autoUpdateEnabled = false;
